@@ -3,7 +3,7 @@
   Tombstone comments below indicate removed blocks from the original large file.
 */
 
-import { createFlowField, buildFlowField, sampleFlow, setObstacleData, computeDragIndex, resizeFlow, renderObstacleOverlay, tick as tickFlowField } from "./src/flowField.js";
+import { createFlowField, buildFlowField, sampleFlow, setObstacleData, computeDragIndex, resizeFlow, renderObstacleOverlay, tick as tickFlowField, startShape, appendShapePoint, endShape, getDynamicShapes } from "./src/flowField.js";
 import { createParticles, initParticles, updateParticles, renderParticles, setParticleParams, resetParticles } from "./src/particles.js";
 import { setupUI, getUIState } from "./src/ui.js";
 
@@ -65,7 +65,71 @@ setupUI({
     setParticleParams(params);
     buildFlowField(params);
   },
+  onFlowShapingToggle: (enabled) => {
+    shaping = !!enabled;
+    if (shaping) {
+      canvas.classList.add("shaping-active");
+    } else {
+      canvas.classList.remove("shaping-active");
+      // finish any active stroke
+      if (drawing) {
+        drawing = false;
+        endShape();
+      }
+    }
+  },
 });
+
+let shaping = false;
+let drawing = false;
+
+// pointer handling for drawing flow-shaping strokes
+canvas.addEventListener("pointerdown", (e) => {
+  if (!shaping) return;
+  drawing = true;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left);
+  const y = (e.clientY - rect.top);
+  startShape(x, y);
+  appendShapePoint(x, y);
+  canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!shaping || !drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left);
+  const y = (e.clientY - rect.top);
+  appendShapePoint(x, y);
+});
+canvas.addEventListener("pointerup", (e) => {
+  if (!shaping || !drawing) return;
+  drawing = false;
+  endShape();
+  canvas.releasePointerCapture && canvas.releasePointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointercancel", () => {
+  if (drawing) { drawing = false; endShape(); }
+});
+
+// render dynamic shapes overlay in loop
+function renderShapesOverlay(ctx) {
+  const shapes = getDynamicShapes();
+  if (!shapes || shapes.length === 0) return;
+  ctx.save();
+  ctx.lineWidth = 8;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(32,220,120,0.95)";
+  ctx.globalCompositeOperation = "lighter";
+  for (const s of shapes) {
+    if (!s.points || s.points.length < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(s.points[0].x, s.points[0].y);
+    for (let i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 
 // handle resize and start loop
 function handleResize() {
@@ -114,6 +178,8 @@ function loop(now) {
   renderObstacleOverlay(ctx);
   // particles render themselves via particle module
   renderParticles(uiState);
+  // draw shapes on top
+  renderShapesOverlay(ctx);
 
   requestAnimationFrame(loop);
 }

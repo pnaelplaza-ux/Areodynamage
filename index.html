@@ -19,17 +19,48 @@
         <span id="dragLabel">Drag index: –</span>
         <span id="windLabel" style="margin-left:10px;">Wind: –</span>
         <span id="liftLabel" style="margin-left:10px;">Lift index: –</span>
+        <span id="yawLabel" style="margin-left:10px;">Yaw: –</span>
       </div>
 
       <!-- Aerodynamics info (collapsible, no JS required) -->
       <details id="aeroInfo" class="aero-info">
         <summary> Aerodynamics — quick guide </summary>
         <div class="aero-body">
-          <p><strong>Lift</strong>: Force perpendicular to flow created by pressure differences around the shape; in this simulation it appears as flow turning and upward/downward deflections near edges.</p>
-          <p><strong>Drag</strong>: Force opposing motion caused by flow separation and frontal area; measured here as the "Drag index" which roughly reflects how much of the silhouette blocks the stream.</p>
-          <p><strong>Turbulence & Gusts</strong>: Random and coherent perturbations that mix the flow — raising turbulence increases chaotic small-scale motion, gusts add larger time-varying pulses.</p>
-          <p><strong>Vortex Effects</strong>: Swirl and lift generated near the trailing edges; controlling vortex strength adjusts how strongly flow wraps and spins behind the obstacle.</p>
-          <p style="margin-top:6px;"><em>Tip:</em> Import different shapes and use the sliders to explore how profile, size and orientation change lift/drag behavior visually.</p>
+          <p><strong>Automotive vs Aircraft</strong>: The main difference is purpose — cars seek downforce (negative lift) for traction and reduced drag for efficiency; aircraft seek lift to fly. Cars are generally bluff bodies operating close to the ground (strong ground effects), while aircraft are streamlined and operate in free air.</p>
+
+          <h4 style="margin-top:8px;">1. Key differences</h4>
+          <table style="width:100%;font-size:0.78rem;margin:6px 0;border-collapse:collapse">
+            <tr><td style="padding:4px 2px;"><strong>Primary Goal</strong></td><td style="padding:4px 2px;">Cars: downforce & drag reduction — Aircraft: lift & drag minimization</td></tr>
+            <tr><td style="padding:4px 2px;"><strong>Body Type</strong></td><td style="padding:4px 2px;">Cars: bluff shapes; Aircraft: streamlined airfoils</td></tr>
+            <tr><td style="padding:4px 2px;"><strong>Ground Proximity</strong></td><td style="padding:4px 2px;">Cars: strong ground effect — Aircraft: mostly free-air</td></tr>
+          </table>
+
+          <h4 style="margin-top:6px;">2. The four forces (automotive view)</h4>
+          <p><strong>A. Drag (F<sub>D</sub>) — resistance</strong><br/>
+             Drag opposes motion and is the main efficiency loss. Useful relation: F<sub>D</sub> = 0.5 · ρ · v² · A · C<sub>D</sub>, where ρ is air density, v velocity, A frontal area, C<sub>D</sub> drag coefficient.</p>
+
+          <p style="margin-top:6px;"><em>Types of drag</em>: Pressure/form drag (dominant for bluff vehicles), skin-friction drag (surface shear), and interference drag (component junctions like mirrors).</p>
+
+          <p style="margin-top:6px;"><strong>B. Lift / Downforce (F<sub>L</sub>)</strong><br/>
+             Lift pushes the car upward; downforce is negative lift that improves grip. Spoilers and wings generate downforce by redirecting airflow. Note: more downforce typically increases drag — designers trade between cornering performance and top-speed efficiency.</p>
+
+          <h4 style="margin-top:6px;">3. Wind behavior & flow management</h4>
+          <p><strong>A. Flow separation & wake</strong><br/>
+             Attached flow follows the body; separation creates turbulent wake regions and large pressure differences that increase pressure drag. Streamlined tails (Kammback) delay separation and shrink the wake.</p>
+
+          <p style="margin-top:6px;"><strong>B. Ground effect</strong><br/>
+             The narrow gap between underbody and road accelerates flow, producing lower pressure beneath the car and net downforce. Sculpted floors, diffusers and side skirts exploit this to create downforce more efficiently than exposed wings.</p>
+
+          <p style="margin-top:6px;"><strong>C. Crosswinds & stability</strong><br/>
+             Crosswinds produce a side force (F<sub>Y</sub>) and a yaw moment (M<sub>Z</sub>) that affect stability. Side force scales with a side-area and a side-force coefficient: F<sub>Y</sub> ≈ 0.5·ρ·V²·A<sub>side</sub>·C<sub>Y</sub>. The yaw moment arises because this force acts through the Center of Pressure (CP), which is rarely aligned with the Center of Gravity (CG).</p>
+
+          <p style="margin-top:6px;"><strong>Center of Pressure vs Center of Gravity</strong><br/>
+             The yaw moment M<sub>Z</sub> ≈ F<sub>Y</sub> · L<sub>CP-CG</sub> (L is the longitudinal moment arm). For predictable behavior designers try to keep the CP ahead of the CG so crosswinds tend to weather-vane the car into the wind (easier to correct). Vehicles with tall side profiles have larger A<sub>side</sub> and can be more sensitive to gusts.</p>
+
+          <h4 style="margin-top:6px;">Practical sandbox tips</h4>
+          <p>Import different silhouettes (cars, vans, trucks) and toggle <em>Vortex</em>, <em>Turbulence</em>, and <em>Gusts</em> to observe wake size, drag index changes, and lift/downforce proxies. Use the readouts (Drag index, Wind, Lift index) to compare shapes and settings.</p>
+
+          <p style="margin-top:6px;"><em>Tip:</em> Narrow, low-profile shapes with delayed separation yield lower drag index and smaller wakes; wide tall shapes increase side-force sensitivity to crosswinds.</p>
         </div>
       </details>
     </div>
@@ -64,6 +95,15 @@
           <span>Gusts</span>
         </div>
 
+        <!-- Flow shaping toggle -->
+        <div class="row toggle-row" style="margin-top:6px;">
+          <label class="switch">
+            <input id="flowShapeToggle" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <span>Flow shaping</span>
+        </div>
+
         <!-- New controls -->
         <div class="row">
           <label>Particles
@@ -79,6 +119,21 @@
               <option value="blue">Blue</option>
               <option value="warm">Warm</option>
             </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <strong style="font-size:12px">Crosswind</strong>
+        </div>
+        <div class="row">
+          <label>Magnitude
+            <input id="crosswindMag" type="range" min="0" max="200" value="0" />
+            <span id="crosswindMagVal">0</span>
+          </label>
+        </div>
+        <div class="row">
+          <label>Angle (deg)
+            <input id="crosswindAngle" type="range" min="-90" max="90" value="0" />
+            <span id="crosswindAngleVal">0°</span>
           </label>
         </div>
 

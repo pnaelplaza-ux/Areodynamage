@@ -29,6 +29,11 @@ body {
   display: block;
 }
 
+/* cursor when shaping active */
+#flowCanvas.shaping-active {
+  cursor: crosshair;
+}
+
 /* Top overlay UI */
 #ui {
   position: absolute;
