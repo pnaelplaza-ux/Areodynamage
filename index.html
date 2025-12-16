@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aero Image Sandbox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="flowCanvas"></canvas>
+
+    <div id="ui">
+      <label class="file-label">
+        <input type="file" id="imageInput" accept="image/*" />
+        Import shape
+      </label>
+      <div id="metrics">
+        <span id="dragLabel">Drag index: –</span>
+        <span id="windLabel" style="margin-left:10px;">Wind: –</span>
+        <span id="liftLabel" style="margin-left:10px;">Lift index: –</span>
+      </div>
+
+      <!-- Aerodynamics info (collapsible, no JS required) -->
+      <details id="aeroInfo" class="aero-info">
+        <summary> Aerodynamics — quick guide </summary>
+        <div class="aero-body">
+          <p><strong>Lift</strong>: Force perpendicular to flow created by pressure differences around the shape; in this simulation it appears as flow turning and upward/downward deflections near edges.</p>
+          <p><strong>Drag</strong>: Force opposing motion caused by flow separation and frontal area; measured here as the "Drag index" which roughly reflects how much of the silhouette blocks the stream.</p>
+          <p><strong>Turbulence & Gusts</strong>: Random and coherent perturbations that mix the flow — raising turbulence increases chaotic small-scale motion, gusts add larger time-varying pulses.</p>
+          <p><strong>Vortex Effects</strong>: Swirl and lift generated near the trailing edges; controlling vortex strength adjusts how strongly flow wraps and spins behind the obstacle.</p>
+          <p style="margin-top:6px;"><em>Tip:</em> Import different shapes and use the sliders to explore how profile, size and orientation change lift/drag behavior visually.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Settings panel -->
+    <div id="settings" aria-hidden="false">
+      <button id="togSettings" class="settings-btn" aria-label="Toggle settings">⚙</button>
+      <div id="settingsPanel" class="panel">
+        <div class="row">
+          <label>Base wind
+            <input id="windSpeed" type="range" min="0" max="200" value="80" />
+            <span id="windVal">80</span>
+          </label>
+        </div>
+        <div class="row">
+          <label>Turbulence
+            <input id="turbulence" type="range" min="0" max="1" step="0.01" value="0.18" />
+            <span id="turbVal">0.18</span>
+          </label>
+        </div>
+        <div class="row">
+          <label>Vortex strength
+            <input id="vortex" type="range" min="0" max="2" step="0.01" value="0.9" />
+            <span id="vortexVal">0.90</span>
+          </label>
+        </div>
+        <div class="row toggle-row">
+          <label class="switch">
+            <input id="gustToggle" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <span>Gusts</span>
+        </div>
+
+        <!-- New controls -->
+        <div class="row">
+          <label>Particles
+            <input id="particleCount" type="range" min="100" max="2000" step="50" value="900" />
+            <span id="particleCountVal">900</span>
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Color mode
+            <select id="colorMode" style="width:120px">
+              <option value="mono">Mono</option>
+              <option value="blue">Blue</option>
+              <option value="warm">Warm</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row ctrl-row" style="margin-top:6px;">
+          <button id="pauseBtn" class="tiny-btn">Pause</button>
+          <button id="resetBtn" class="tiny-btn">Reset</button>
+          <button id="exportBtn" class="tiny-btn">Export PNG</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
+
