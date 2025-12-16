@@ -17,7 +17,7 @@ let turbulence = 0.18;
 let gustsEnabled = false;
 let colorMode = "mono";
 
-import { getObstacleData } from "./flowField.js";
+import { getObstacleData, sampleFlow, samplePressure } from "./flowField.js";
 
 export function createParticles({ canvas: c, ctx: ct }) {
   canvas = c;
@@ -97,7 +97,7 @@ export function updateParticles(dt, uiState = {}) {
   width = canvas.clientWidth || window.innerWidth;
   height = canvas.clientHeight || window.innerHeight;
 
-  const flowSample = getObstacleData().sampleFlow;
+  const flowSample = sampleFlow;
 
   for (const p of particles) {
     const f = flowSample(p.x, p.y);
@@ -142,10 +142,9 @@ export function updateParticles(dt, uiState = {}) {
 export function renderParticles(uiState = {}) {
   ctx.save();
   ctx.globalAlpha = 0.85;
-  let stroke = "rgba(20,20,20,0.12)";
-  if (uiState.colorMode === "blue") stroke = "rgba(10,90,200,0.14)";
-  if (uiState.colorMode === "warm") stroke = "rgba(180,70,20,0.14)";
-  ctx.strokeStyle = stroke;
+  // color/pressure visualization: adjust stroke per-particle based on local pressure (pressure proxy)
+  const flowSample = sampleFlow;
+  const pressureSample = samplePressure;
   ctx.lineWidth = 1.2;
   ctx.lineCap = "round";
 
@@ -157,6 +156,35 @@ export function renderParticles(uiState = {}) {
     const nx = px - (p.vx / (speed + 1e-6)) * len;
     const ny = py - (p.vy / (speed + 1e-6)) * len;
 
+    // sample pressure and map to color: high pressure -> warm (red/yellow), low pressure -> cool (blue/cyan)
+    let pVal = 0;
+    try {
+      pVal = pressureSample(px, py);
+    } catch (e) { pVal = 0; }
+    // Normalize pVal to -Vref^2..+Vref^2 -> map to 0..1
+    const Vref = Math.max(1, uiState.baseWindSpeed || 80);
+    const norm = Math.max(-Vref * Vref, Math.min(Vref * Vref, pVal));
+    const t = (norm + Vref * Vref) / (2 * Vref * Vref); // 0..1 scale: 0=cold,1=hot
+
+    let strokeColor = "rgba(20,20,20,0.12)";
+    if (uiState.colorMode === "blue") {
+      const r = Math.round(40 + 200 * t);
+      const g = Math.round(80 + 40 * (1 - t));
+      const b = Math.round(200 - 120 * t);
+      strokeColor = `rgba(${r},${g},${b},0.16)`;
+    } else if (uiState.colorMode === "warm") {
+      const r = Math.round(120 + 120 * t);
+      const g = Math.round(60 - 20 * t);
+      const b = Math.round(40 - 20 * t);
+      strokeColor = `rgba(${r},${g},${b},0.16)`;
+    } else {
+      const r = 20 + Math.round(200 * t);
+      const g = 20 + Math.round(160 * (1 - t));
+      const b = 30 + Math.round(120 * (1 - t));
+      strokeColor = `rgba(${r},${g},${b},0.14)`;
+    }
+    ctx.strokeStyle = strokeColor;
+
     ctx.beginPath();
     ctx.moveTo(nx, ny);
     ctx.lineTo(px, py);
@@ -167,13 +195,10 @@ export function renderParticles(uiState = {}) {
   // also render obstacle overlay from flowField module for cohesion
   const flow = getObstacleData();
   if (flow) {
-    // draw overlay using the same ctx
     const { obstacleData, obstacleBounds } = flow;
     if (obstacleData && obstacleBounds) {
       ctx.save();
       ctx.globalAlpha = 0.98;
-      // We cannot access obstacleCanvas directly here; draw the image stored in flowField via a helper would be ideal.
-      // But renderParticles is intended to be called after renderBackground in main loop; additional obstacle overlay is drawn in flowField if desired.
       ctx.restore();
     }
   }
