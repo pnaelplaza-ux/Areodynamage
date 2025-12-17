@@ -16,11 +16,7 @@ export const renderObstacleOverlay = core.renderObstacleOverlay;
 export const tick = core.tick;
 export const getObstacleData = core.getObstacleData;
 
-// Re-export shaping APIs from aeroCore so higher-level wrappers can expose them.
-export const startShape = core.startShape;
-export const appendShapePoint = core.appendShapePoint;
-export const endShape = core.endShape;
-export const getDynamicShapes = core.getDynamicShapes;
+
 
 // Export new pressure sampling API
 export const samplePressure = core.samplePressure;

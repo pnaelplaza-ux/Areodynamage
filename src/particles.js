@@ -51,14 +51,15 @@ export function resetParticles() {
   initParticles();
 }
 
-function isSolidAt(x, y) {
-  const od = getObstacleData().obstacleData;
-  if (!od) return false;
-  if (x < 0 || y < 0 || x >= width || y >= height) return false;
-  const ix = x | 0;
-  const iy = y | 0;
-  const idx = (iy * od.width + ix) * 4;
-  return od.data[idx + 3] > 10;
+import { isSolidAt } from "./flowSolver.js";
+
+/* reset a particle to a fresh off-screen position */
+function resetParticle(p) {
+  p.x = -10 - Math.random() * 40;
+  p.y = Math.random() * height;
+  p.vx = 0;
+  p.vy = 0;
+  p.age = 0;
 }
 
 function sampleAlphaGradientLocal(x, y) {
@@ -126,15 +127,10 @@ export function updateParticles(dt, uiState = {}) {
       p.vy = 0;
     }
 
+    // If particle ended up inside the solid silhouette, reset it immediately to avoid sticking.
     if (isSolidAt(p.x, p.y)) {
-      p.x -= p.vx * dt * 1.5;
-      p.y -= p.vy * dt * 1.5;
-
-      const g = sampleAlphaGradientLocal(p.x, p.y);
-      p.vx += g.gx * 60;
-      p.vy += g.gy * 60;
-      p.vx *= 0.4;
-      p.vy *= 0.4;
+      resetParticle(p);
+      continue;
     }
   }
 }

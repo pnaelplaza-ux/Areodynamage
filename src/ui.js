@@ -12,15 +12,19 @@ let uiState = {
   gustsEnabled: false,
   particleCount: 900,
   colorMode: "mono",
+  backgroundColor: "#f4f3ef",
+  // smoothImage removed; smoothing is simulated automatically in obstacle processing
 };
 
 export function getUIState() {
   return { ...uiState };
 }
 
-export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParamsChange, onFlowShapingToggle }) {
+export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParamsChange, onFlowShapingToggle, onExportVideo }) {
   const fileInput = document.getElementById("imageInput");
+  const smoothCheckbox = document.getElementById("smoothImage");
   const dragLabel = document.getElementById("dragLabel");
+  const exportVideoBtn = document.getElementById("exportVideoBtn");
 
   const togSettings = document.getElementById("togSettings");
   const settingsPanel = document.getElementById("settingsPanel");
@@ -34,6 +38,7 @@ export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParam
   const particleCountInput = document.getElementById("particleCount");
   const particleCountVal = document.getElementById("particleCountVal");
   const colorModeSelect = document.getElementById("colorMode");
+  const bgColorInput = document.getElementById("bgColor");
   const crosswindMag = document.getElementById("crosswindMag");
   const crosswindMagVal = document.getElementById("crosswindMagVal");
   const crosswindAngle = document.getElementById("crosswindAngle");
@@ -41,9 +46,25 @@ export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParam
   const pauseBtn = document.getElementById("pauseBtn");
   const exportBtn = document.getElementById("exportBtn");
   const resetBtn = document.getElementById("resetBtn");
-  const flowShapeToggle = document.getElementById("flowShapeToggle");
 
-  togSettings?.addEventListener("click", () => settingsPanel.classList.toggle("show"));
+  togSettings?.addEventListener("click", () => {
+    const showing = settingsPanel.classList.toggle("show");
+    // stagger children with small delays when opening for a pleasant entrance
+    const children = Array.from(settingsPanel.querySelectorAll(".row, .ctrl-row, .panel .row > *"));
+    if (showing) {
+      children.forEach((el, i) => {
+        el.style.animationDelay = `${30 + i * 30}ms`;
+        el.classList.add("panel-item-in");
+        // ensure reflow so animation restarts when reopened quickly
+        void el.offsetWidth;
+      });
+    } else {
+      children.forEach((el) => {
+        el.style.animationDelay = "";
+        el.classList.remove("panel-item-in");
+      });
+    }
+  });
 
   // debounce wrapper to avoid spamming updates from fast slider moves
   let _debounceTimer = 0;
@@ -76,11 +97,7 @@ export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParam
     emitParams({ gustsEnabled: uiState.gustsEnabled });
   });
 
-  // flow shaping toggle: notify caller (not part of params debounce)
-  flowShapeToggle?.addEventListener("change", (e) => {
-    uiState.flowShaping = e.target.checked;
-    if (typeof onFlowShapingToggle === "function") onFlowShapingToggle(uiState.flowShaping);
-  });
+
 
   particleCountInput?.addEventListener("input", (e) => {
     uiState.particleCount = parseInt(e.target.value, 10);
@@ -91,6 +108,13 @@ export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParam
   colorModeSelect?.addEventListener("change", (e) => {
     uiState.colorMode = e.target.value;
     emitParams({ colorMode: uiState.colorMode });
+  });
+
+  // background color picker
+  bgColorInput?.addEventListener("input", (e) => {
+    uiState.backgroundColor = e.target.value;
+    // inform listeners of backgroundColor change (no heavy debounce)
+    onParamsChange && onParamsChange({ backgroundColor: uiState.backgroundColor });
   });
 
   // crosswind controls
@@ -105,6 +129,14 @@ export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParam
     emitParams({ crosswindAngle: uiState.crosswindAngle });
   });
 
+  // smooth checkbox handling
+  if (smoothCheckbox) {
+    uiState.smoothImage = smoothCheckbox.checked;
+    smoothCheckbox.addEventListener("change", (e) => {
+      uiState.smoothImage = !!e.target.checked;
+    });
+  }
+
   pauseBtn?.addEventListener("click", () => {
     const paused = pauseBtn.textContent !== "Resume";
     pauseBtn.textContent = paused ? "Resume" : "Pause";
@@ -112,15 +144,16 @@ export function setupUI({ onTogglePause, onExport, onReset, onImageLoad, onParam
   });
 
   exportBtn?.addEventListener("click", () => onExport && onExport());
+  exportVideoBtn?.addEventListener("click", () => onExportVideo && onExportVideo());
   resetBtn?.addEventListener("click", () => onReset && onReset());
 
-  // file import handling
+  // file import handling: pass smoothing choice to callback
   fileInput?.addEventListener("change", (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const img = new Image();
     img.onload = () => {
-      onImageLoad && onImageLoad(img);
+      onImageLoad && onImageLoad(img, { smoothing: uiState.smoothImage });
     };
     img.onerror = () => {
       if (dragLabel) dragLabel.textContent = "Drag index: –";

@@ -18,8 +18,4 @@ export const tick = core.tick;
 export const getObstacleData = core.getObstacleData;
 export const samplePressure = core.samplePressure;
 
-// expose new shaping APIs
-export const startShape = core.startShape;
-export const appendShapePoint = core.appendShapePoint;
-export const endShape = core.endShape;
-export const getDynamicShapes = core.getDynamicShapes;
+
