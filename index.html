@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Aero Image Sandbox</title>
+  <title>Dynamage</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -10,11 +10,24 @@
   <div id="app">
     <canvas id="flowCanvas"></canvas>
 
+    <!-- Intro banner (auto-fade) -->
+    <div id="introBanner" class="intro-banner" role="note" aria-live="polite">
+      <div class="intro-inner">
+        <button class="intro-close" aria-label="Dismiss intro">&times;</button>
+        <div class="intro-title">Dynamage</div>
+        <div class="intro-sub">Explore airflow visualizations over your silhouettes — import an image to start.</div>
+        <div class="intro-foot">Made with love in France 🇫🇷❤️</div>
+      </div>
+    </div>
+
     <div id="ui">
       <label class="file-label">
         <input type="file" id="imageInput" accept="image/*" />
         Import shape
       </label>
+
+      <!-- smoothing UI removed - smoothing is now simulated automatically -->
+
       <div id="metrics">
         <span id="dragLabel">Drag index: –</span>
         <span id="windLabel" style="margin-left:10px;">Wind: –</span>
@@ -58,16 +71,34 @@
              The yaw moment M<sub>Z</sub> ≈ F<sub>Y</sub> · L<sub>CP-CG</sub> (L is the longitudinal moment arm). For predictable behavior designers try to keep the CP ahead of the CG so crosswinds tend to weather-vane the car into the wind (easier to correct). Vehicles with tall side profiles have larger A<sub>side</sub> and can be more sensitive to gusts.</p>
 
           <h4 style="margin-top:6px;">Practical sandbox tips</h4>
-          <p>Import different silhouettes (cars, vans, trucks) and toggle <em>Vortex</em>, <em>Turbulence</em>, and <em>Gusts</em> to observe wake size, drag index changes, and lift/downforce proxies. Use the readouts (Drag index, Wind, Lift index) to compare shapes and settings.</p>
+          <p>Import different silhouettes (cars, vans, trucks) and toggle <em>Vortex</em>, <em>Turbulence</em>, and <em>Gusts</em> to explore wake size, drag and lift changes, and how flow separates behind shapes. Watch the UI readouts (Drag (C_D), Wind V_ref, Lift (C_L), Yaw moment) for quick comparison between designs.</p>
+
+          <p style="margin-top:6px;"><em>Practical tips:</em>
+            <ul style="margin:6px 0 0 18px;padding:0;font-size:0.75rem">
+              <li>Low, streamlined profiles with gradual aft taper reduce wake size and pressure drag.</li>
+              <li>Underbody shaping and diffusers create ground-effect downforce more efficiently than large exposed wings.</li>
+              <li>Tall or bluff bodies produce stronger side forces in crosswinds — test different angles with the Crosswind controls.</li>
+            </ul>
+          </p>
+
+          <p style="margin-top:6px;"><em>Quick facts:</em> Drag scales roughly with velocity squared (force ≈ 0.5·ρ·V²·A·C_D), so doubling speed increases drag ~4×; small shape changes can have large effects at high speed.</p>
 
           <p style="margin-top:6px;"><em>Tip:</em> Narrow, low-profile shapes with delayed separation yield lower drag index and smaller wakes; wide tall shapes increase side-force sensitivity to crosswinds.</p>
+
+          <p style="margin-top:8px;font-size:0.85rem">Made with love in France ❤️🇫🇷</p>
         </div>
       </details>
     </div>
 
-    <!-- Settings panel -->
+    <!-- Logo easter egg in bottom-right (mobile-optimized) -->
+    <div id="logoContainer" class="logo-container">
+      <img src="copilot_image_1765907400460 (1).jpeg" alt="Dynamage Logo" class="logo-img" />
+      <img src="potato-chips.gif" alt="Chips" class="logo-gif" data-gif style="display:none;" />
+    </div>
+
+    <!-- Settings panel (mobile-first, bottom-dock) -->
     <div id="settings" aria-hidden="false">
-      <button id="togSettings" class="settings-btn" aria-label="Toggle settings">⚙</button>
+      <button id="togSettings" class="settings-btn" aria-label="Toggle settings">⚙️</button>
       <div id="settingsPanel" class="panel">
         <div class="row">
           <label>Base wind
@@ -95,14 +126,7 @@
           <span>Gusts</span>
         </div>
 
-        <!-- Flow shaping toggle -->
-        <div class="row toggle-row" style="margin-top:6px;">
-          <label class="switch">
-            <input id="flowShapeToggle" type="checkbox" />
-            <span class="slider"></span>
-          </label>
-          <span>Flow shaping</span>
-        </div>
+
 
         <!-- New controls -->
         <div class="row">
@@ -119,6 +143,12 @@
               <option value="blue">Blue</option>
               <option value="warm">Warm</option>
             </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Background
+            <input id="bgColor" type="color" value="#f4f3ef" style="width:72px;height:32px;border-radius:6px;border:0;padding:0" />
           </label>
         </div>
         <div class="row" style="margin-top:6px;">
@@ -141,6 +171,7 @@
           <button id="pauseBtn" class="tiny-btn">Pause</button>
           <button id="resetBtn" class="tiny-btn">Reset</button>
           <button id="exportBtn" class="tiny-btn">Export PNG</button>
+          <button id="exportVideoBtn" class="tiny-btn">Export MP4</button>
         </div>
       </div>
     </div>
